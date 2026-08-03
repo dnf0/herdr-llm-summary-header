@@ -113,6 +113,7 @@ function summarizeWithAgent(agentId, prompt) {
   try {
     const output = execFileSync(adapter.command, adapter.args(prompt), {
       encoding: 'utf8',
+      timeout: 60_000,
     });
     const cleaned = stripCliChrome(output);
     return cleaned || null;

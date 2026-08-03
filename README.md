@@ -60,16 +60,19 @@ has been confirmed against a real `claude --help`/invocation.
 
 The unit tests in `summarize.test.js` cover pure logic only — they don't
 call the real `claude`/`codex` CLIs, so an upstream flag rename wouldn't be
-caught by `npm test`. `test/smoke/` has a Docker-based smoke test that
+caught by `npm test`. `smoke/` has a Docker-based smoke test that
 exercises the real `claude-code` and `codex` adapters against real,
 already-authenticated CLIs. It's manual and on-demand only — it never runs
 in CI, since it needs live credentials and makes real (billable) API calls.
 `antigravity` isn't covered (see "Development" above).
 
 Requires you to already be logged into `claude` and `codex` on your host
-machine (the container reuses your existing `~/.claude.json`, `~/.claude/`,
-and `~/.codex/` via read-only mounts — no credentials are stored in the
-image or the repo):
+machine. Your host's `~/.claude.json`, `~/.claude/`, and `~/.codex/` are
+bind-mounted read-only into the container at startup, then copied into the
+container's own writable, ephemeral filesystem before the CLIs run (since
+the CLIs write session state on nearly every invocation) — the host files
+themselves are never written back to, and no credentials are stored in the
+image or the repo:
 
 ```
 npm run smoke:build

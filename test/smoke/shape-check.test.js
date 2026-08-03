@@ -39,3 +39,11 @@ test('looksLikeSummary accepts text at exactly 400 characters', () => {
 test('looksLikeSummary rejects text containing an ANSI escape sequence', () => {
   assert.equal(looksLikeSummary('\x1b[32mgreen text\x1b[0m'), false);
 });
+
+test('looksLikeSummary rejects multi-paragraph output', () => {
+  assert.equal(looksLikeSummary('First paragraph.\n\nSecond paragraph.'), false);
+});
+
+test('looksLikeSummary rejects text containing a markdown code fence', () => {
+  assert.equal(looksLikeSummary('Summary:\n```\ncode here\n```'), false);
+});
