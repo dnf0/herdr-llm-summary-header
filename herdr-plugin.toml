@@ -1,0 +1,10 @@
+id = "danielfisher.summary-header"
+name = "Summary Header"
+version = "0.1.0"
+min_herdr_version = "0.7.0"
+description = "LLM one-line summary written to the pane title when an agent finishes"
+platforms = ["linux", "macos"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["node", "summarize.js"]
