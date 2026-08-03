@@ -131,14 +131,18 @@ function summarizeWithAgent(agentId, prompt) {
   }
 }
 
+const PLUGIN_SOURCE_ID = 'danielfisher.summary-header';
+
 function writeTitle(paneId, title) {
   const herdrBin = process.env.HERDR_BIN_PATH;
   if (!herdrBin) {
     throw new Error('HERDR_BIN_PATH is not set');
   }
-  execFileSync(herdrBin, ['pane', 'report-metadata', paneId, '--title', title], {
-    encoding: 'utf8',
-  });
+  execFileSync(
+    herdrBin,
+    ['pane', 'report-metadata', paneId, '--source', PLUGIN_SOURCE_ID, '--title', title],
+    { encoding: 'utf8' }
+  );
 }
 
 function stateKeyFor(stateDir, paneId) {
