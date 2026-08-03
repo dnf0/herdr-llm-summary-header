@@ -42,9 +42,7 @@ test('loadEnvFile parses quoted values, comments, and blank lines', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'summarize-test-'));
   fs.writeFileSync(
     path.join(dir, '.env'),
-    ['# a comment', '', 'FOO=bar', 'BAZ="quoted value"', "QUX='single quoted'"].join(
-      '\n'
-    )
+    ['# a comment', '', 'FOO=bar', 'BAZ="quoted value"', "QUX='single quoted'"].join('\n')
   );
   assert.deepEqual(loadEnvFile(dir), {
     FOO: 'bar',

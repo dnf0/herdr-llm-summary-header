@@ -1,0 +1,18 @@
+{
+  "name": "herdr-llm-summary-header",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Herdr plugin that writes an LLM-generated one-line summary to a pane's title when an agent finishes",
+  "main": "summarize.js",
+  "scripts": {
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "node --test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2"
+  }
+}

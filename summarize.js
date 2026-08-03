@@ -56,11 +56,13 @@ function getRecentOutput(paneId) {
   const herdrBin = process.env.HERDR_BIN_PATH;
   if (!herdrBin || !paneId) return null;
   try {
-    return execFileSync(
-      herdrBin,
-      ['agent', 'read', paneId, '--source', 'recent-unwrapped', '--lines', '150'],
-      { encoding: 'utf8' }
-    ).trim() || null;
+    return (
+      execFileSync(
+        herdrBin,
+        ['agent', 'read', paneId, '--source', 'recent-unwrapped', '--lines', '150'],
+        { encoding: 'utf8' }
+      ).trim() || null
+    );
   } catch (err) {
     return null;
   }
