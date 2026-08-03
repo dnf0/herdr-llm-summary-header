@@ -8,7 +8,9 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "node --test"
+    "test": "node --test",
+    "smoke:build": "docker build -t herdr-summary-header-smoke -f test/smoke/Dockerfile .",
+    "smoke:run": "docker run --rm -v ~/.claude.json:/root/.claude.json:ro -v ~/.claude:/root/.claude:ro -v ~/.codex:/root/.codex:ro herdr-summary-header-smoke"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

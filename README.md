@@ -56,6 +56,30 @@ local `codex` install has a broken native binary and `antigravity` isn't
 installed) — only the `claude-code` adapter (`-p <prompt> --model haiku`)
 has been confirmed against a real `claude --help`/invocation.
 
+## Smoke-testing agent adapters
+
+The unit tests in `summarize.test.js` cover pure logic only — they don't
+call the real `claude`/`codex` CLIs, so an upstream flag rename wouldn't be
+caught by `npm test`. `test/smoke/` has a Docker-based smoke test that
+exercises the real `claude-code` and `codex` adapters against real,
+already-authenticated CLIs. It's manual and on-demand only — it never runs
+in CI, since it needs live credentials and makes real (billable) API calls.
+`antigravity` isn't covered (see "Development" above).
+
+Requires you to already be logged into `claude` and `codex` on your host
+machine (the container reuses your existing `~/.claude.json`, `~/.claude/`,
+and `~/.codex/` via read-only mounts — no credentials are stored in the
+image or the repo):
+
+```
+npm run smoke:build
+npm run smoke:run
+```
+
+Expected output: one `✓ claude-code: "<summary>"` and one `✓ codex:
+"<summary>"` line. A `✗` line means that adapter's CLI invocation is broken
+(wrong flags) or its credentials in the mounted directory are stale/missing.
+
 ## Publishing
 
 Push to GitHub and add the `herdr-plugin` topic to make it marketplace
