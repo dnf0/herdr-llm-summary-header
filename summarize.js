@@ -88,10 +88,19 @@ const AGENT_ADAPTERS = {
   },
 };
 
+// Herdr's real pane.agent_status_changed events report the bare detector
+// id (e.g. "claude", from agent-detection/remote/claude.toml), not
+// "Claude Code" — confirmed via `herdr agent explain` against a live pane.
+// `codex` already matches AGENT_ADAPTERS as-is.
+const AGENT_ID_ALIASES = {
+  claude: 'claude-code',
+};
+
 function getAgentId(event) {
   const raw = event.agent || event.agent_id || event.agent_type;
   if (!raw || typeof raw !== 'string') return null;
-  return raw.trim().toLowerCase().replace(/\s+/g, '-');
+  const normalized = raw.trim().toLowerCase().replace(/\s+/g, '-');
+  return AGENT_ID_ALIASES[normalized] || normalized;
 }
 
 function buildPrompt(label, sourceText) {

@@ -75,6 +75,10 @@ test('getAgentId returns null when no agent field is present', () => {
   assert.equal(getAgentId({}), null);
 });
 
+test('getAgentId maps Herdr real-world "claude" label to the claude-code adapter key', () => {
+  assert.equal(getAgentId({ agent: 'claude' }), 'claude-code');
+});
+
 test('buildPrompt embeds the label and source text', () => {
   const prompt = buildPrompt('Git diff', 'diff --git a b');
   assert.match(prompt, /Git diff:/);
