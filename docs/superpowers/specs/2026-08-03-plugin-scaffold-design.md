@@ -6,12 +6,46 @@ Turn the existing plugin logic (manifest + event script) into a properly
 scaffolded, versioned, and tested repo, ready to push to GitHub and be
 installed via `herdr plugin install`.
 
-This spec covers repo structure, release/versioning tooling, and dev tooling
-(lint/format/test). It does not change the plugin's runtime behavior
-(described in the original PLAN.md): fire on `pane.agent_status_changed`,
-gate on `status == "done"`, summarize git diff (or fallback to recent pane
-output) via a small Claude model, write the result as the pane title, and
+This spec covers repo structure, release/versioning tooling, dev tooling
+(lint/format/test), and one runtime change from the original PLAN.md: instead
+of calling the Anthropic API directly with an owned API key, the plugin
+shells out to the CLI already running in the pane (in v1, Claude Code) so it
+rides the user's existing session/subscription rather than requiring a
+separate key. Everything else from PLAN.md is unchanged: fire on
+`pane.agent_status_changed`, gate on `status == "done"`, summarize git diff
+(or fallback to recent pane output), write the result as the pane title, and
 cache by content hash to skip redundant calls.
+
+## Model source
+
+- Instead of `https.request` to `api.anthropic.com` with an owned
+  `ANTHROPIC_API_KEY`, the plugin shells out (`execFileSync`) to the CLI
+  already running in the pane, in headless/non-interactive mode, using that
+  tool's cheapest/fastest model. This removes the need for any credential
+  config in v1.
+- v1 supports **Claude Code, Codex, and Antigravity**, dispatched by a small
+  adapter table keyed on the event JSON's `agent` field (exact field
+  name/values TBD — first implementation step is to inspect a real
+  `pane.agent_status_changed` payload to confirm them). Each adapter is just
+  a command template + cheap-model flag:
+  - Claude Code: `claude -p "<prompt>" --model haiku`
+  - Codex: `codex exec "<prompt>"` with its low-cost model flag (exact flag
+    TBD — confirm against `codex exec --help` during implementation; Codex
+    CLI naming/flags may have changed since training cutoff)
+  - Antigravity: command and cheap-model flag TBD — confirm against that
+    CLI's own `--help`/docs during implementation, since it's newer and
+    less documented in training data
+  In all cases the diff/output context is embedded in `<prompt>`, stdout is
+  captured, and a light cleanup strips CLI chrome (ANSI codes, leading/
+  trailing whitespace) before using it as the title.
+- Any other, missing, or unrecognized `agent` value causes the plugin to
+  exit silently without writing a title — same "no context available"
+  no-op path as when there's no diff/output to summarize. This leaves room
+  to add more adapters later behind the same dispatch point without
+  redesigning it.
+- `HERDR_PLUGIN_CONFIG_DIR`/`.env` is no longer required for API
+  credentials in v1. It's left available for future tunables (e.g. max
+  summary length) but nothing reads it yet.
 
 ## Repo structure
 
@@ -87,15 +121,17 @@ pure logic testable without mocking child processes or network calls:
   parsing (quotes, comments, blank lines), and cache-hash stability/change
   detection.
 - Side-effecting paths (git diff, `herdr agent read`, `herdr pane
-  report-metadata`, the Anthropic HTTP call) are explicitly out of scope for
-  automated tests here — they're exercised manually via `herdr plugin link`
-  against a real Herdr instance, and this is called out in the README so
-  it's not mistaken for full coverage.
+  report-metadata`, and the `claude -p` CLI invocation) are explicitly out
+  of scope for automated tests here — they're exercised manually via
+  `herdr plugin link` against a real Herdr instance, and this is called out
+  in the README so it's not mistaken for full coverage.
 
 ## Out of scope
 
-- Any change to the plugin's runtime summarization behavior itself (already
-  implemented in `summarize.js` per PLAN.md).
 - npm registry publishing.
-- Multi-agent support beyond what PLAN.md already scoped (Claude Code
-  first).
+- Adapters for agents beyond Claude Code, Codex, and Antigravity (can be
+  added later behind the same dispatch point).
+- Confirming exact CLI flags for Codex/Antigravity headless invocation and
+  the exact event JSON `agent` field name/values — these are implementation-
+  time verification steps, not design decisions, since the docs weren't
+  checked as part of this spec.
