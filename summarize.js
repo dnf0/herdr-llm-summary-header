@@ -170,18 +170,20 @@ function writeLastHash(stateFile, hash) {
 }
 
 async function main() {
-  const event = readJsonEnv('HERDR_PLUGIN_EVENT_JSON');
-  if (!event || event.status !== 'done') {
+  const rawEvent = readJsonEnv('HERDR_PLUGIN_EVENT_JSON');
+  const eventData = rawEvent && rawEvent.data;
+  if (!eventData || eventData.agent_status !== 'done') {
     return;
   }
 
-  const paneId = event.pane_id || event.paneId;
+  const paneId = eventData.pane_id;
   if (!paneId) {
     return;
   }
 
   const context = readJsonEnv('HERDR_PLUGIN_CONTEXT_JSON') || {};
-  const cwd = context.cwd || context.working_dir;
+  const cwd =
+    context.focused_pane_id === paneId ? context.focused_pane_cwd : context.workspace_cwd;
 
   let source = null;
   let sourceText = null;
@@ -213,7 +215,7 @@ async function main() {
     return;
   }
 
-  const agentId = getAgentId(event);
+  const agentId = getAgentId(eventData);
   if (!agentId) {
     return;
   }
