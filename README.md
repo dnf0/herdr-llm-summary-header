@@ -56,6 +56,45 @@ local `codex` install has a broken native binary and `antigravity` isn't
 installed) — only the `claude-code` adapter (`-p <prompt> --model haiku`)
 has been confirmed against a real `claude --help`/invocation.
 
+## Smoke-testing agent adapters
+
+The unit tests in `summarize.test.js` cover pure logic only — they don't
+call the real `claude`/`codex` CLIs, so an upstream flag rename wouldn't be
+caught by `npm test`. `smoke/` has a Docker-based smoke test that exercises
+the real `claude-code` adapter against a real, authenticated `claude` CLI.
+It's manual and on-demand only — it never runs in CI, since it needs live
+credentials and makes real (billable) API calls.
+
+`codex` and `antigravity` are NOT covered by this smoke test:
+
+- `codex` is excluded on purpose: its OAuth flow uses a single-use rotating
+  refresh token. Copying a live `~/.codex/` into the container (the
+  original approach) races the container's token refresh against your
+  host's own copy, and can invalidate your host machine's real `codex`
+  login. There's no known static/long-lived auth mode for `codex` (unlike
+  `claude setup-token`, see below) that would avoid this risk.
+- `antigravity` has no known npm/brew installer and isn't covered — see
+  "Development" above.
+
+`claude-code`'s real OAuth session lives in the macOS Keychain, which a
+Linux container can never read — mounting `~/.claude.json`/`~/.claude/`
+doesn't work, and unlike `codex`'s refresh token, there's a purpose-built
+alternative: run `claude setup-token` once (interactive, opens a browser)
+to mint a long-lived, non-rotating token, then export it in your shell —
+`export CLAUDE_CODE_OAUTH_TOKEN=<token>` — before running `smoke:run`. It's
+passed straight through to the container via `docker run -e`; it's never
+written to a file or stored in the repo/image.
+
+```
+export CLAUDE_CODE_OAUTH_TOKEN=<token from `claude setup-token`>
+npm run smoke:build
+npm run smoke:run
+```
+
+Expected output: one `✓ claude-code: "<summary>"` and one `✓ codex:
+"<summary>"` line. A `✗` line means that adapter's CLI invocation is broken
+(wrong flags) or its credentials in the mounted directory are stale/missing.
+
 ## Publishing
 
 Push to GitHub and add the `herdr-plugin` topic to make it marketplace

@@ -80,7 +80,7 @@ const AGENT_ADAPTERS = {
   },
   codex: {
     command: 'codex',
-    args: (prompt) => ['exec', '--model', 'o4-mini', prompt],
+    args: (prompt) => ['exec', '--skip-git-repo-check', '--model', 'o4-mini', prompt],
   },
   antigravity: {
     command: 'antigravity',
@@ -88,10 +88,19 @@ const AGENT_ADAPTERS = {
   },
 };
 
+// Herdr's real pane.agent_status_changed events report the bare detector
+// id (e.g. "claude", from agent-detection/remote/claude.toml), not
+// "Claude Code" — confirmed via `herdr agent explain` against a live pane.
+// `codex` already matches AGENT_ADAPTERS as-is.
+const AGENT_ID_ALIASES = {
+  claude: 'claude-code',
+};
+
 function getAgentId(event) {
   const raw = event.agent || event.agent_id || event.agent_type;
   if (!raw || typeof raw !== 'string') return null;
-  return raw.trim().toLowerCase().replace(/\s+/g, '-');
+  const normalized = raw.trim().toLowerCase().replace(/\s+/g, '-');
+  return AGENT_ID_ALIASES[normalized] || normalized;
 }
 
 function buildPrompt(label, sourceText) {
@@ -113,6 +122,7 @@ function summarizeWithAgent(agentId, prompt) {
   try {
     const output = execFileSync(adapter.command, adapter.args(prompt), {
       encoding: 'utf8',
+      timeout: 60_000,
     });
     const cleaned = stripCliChrome(output);
     return cleaned || null;
@@ -121,14 +131,18 @@ function summarizeWithAgent(agentId, prompt) {
   }
 }
 
+const PLUGIN_SOURCE_ID = 'danielfisher.summary-header';
+
 function writeTitle(paneId, title) {
   const herdrBin = process.env.HERDR_BIN_PATH;
   if (!herdrBin) {
     throw new Error('HERDR_BIN_PATH is not set');
   }
-  execFileSync(herdrBin, ['pane', 'report-metadata', paneId, '--title', title], {
-    encoding: 'utf8',
-  });
+  execFileSync(
+    herdrBin,
+    ['pane', 'report-metadata', paneId, '--source', PLUGIN_SOURCE_ID, '--title', title],
+    { encoding: 'utf8' }
+  );
 }
 
 function stateKeyFor(stateDir, paneId) {
