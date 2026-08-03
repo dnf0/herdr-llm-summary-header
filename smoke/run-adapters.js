@@ -15,7 +15,13 @@ const CANNED_DIFF = [
   '+}',
 ].join('\n');
 
-const ADAPTERS_TO_TEST = ['claude-code', 'codex'];
+// codex is excluded: its OAuth flow uses a single-use rotating refresh
+// token, so copying a live ~/.codex/ into the container races the token
+// rotation against the host's own copy and can invalidate the host's real
+// codex login. claude-code uses a stable, purpose-built long-lived token
+// (`claude setup-token`) with no such risk. antigravity has no known
+// installer — see README.
+const ADAPTERS_TO_TEST = ['claude-code'];
 
 function main() {
   const prompt = buildPrompt('Git diff', CANNED_DIFF);

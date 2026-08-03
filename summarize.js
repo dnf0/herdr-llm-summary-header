@@ -80,7 +80,7 @@ const AGENT_ADAPTERS = {
   },
   codex: {
     command: 'codex',
-    args: (prompt) => ['exec', '--model', 'o4-mini', prompt],
+    args: (prompt) => ['exec', '--skip-git-repo-check', '--model', 'o4-mini', prompt],
   },
   antigravity: {
     command: 'antigravity',
